@@ -1,4 +1,6 @@
-﻿using DoDSamples.Samples;
+﻿using BenchmarkDotNet.Running;
+using DoDSamples.Samples;
+using DoDSamples.Samples.Benchmarks;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Intrinsics;
@@ -10,6 +12,9 @@ namespace DoDSamples
     {
         static void Main(string[] args)
         {
+
+
+
             /////////////////
             // Rows vs Cols.
             /////////////////
@@ -87,6 +92,7 @@ namespace DoDSamples
             //var summary = BenchmarkRunner.Run<RowsVsCols>();
             //var summary = BenchmarkRunner.Run<OOPvsDoDParsers>();
             //var summary = BenchmarkRunner.Run<OOPvsDoDParsersToLower>();
+            var summary = BenchmarkRunner.Run<RefListVSList>();
 
 
             //SIMDSum simd = new SIMDSum();
