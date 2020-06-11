@@ -15,18 +15,24 @@ namespace DoDSamples
             //
             // Quick Wormup.
             //
+
+            Console.WriteLine(" [1] Wormup  ... ");
+
             for(int i = 0; i < 2; i++)
             {
                 a();
             }
 
+            Console.WriteLine(" [2] Running ... ");
+          
             Stopwatch w = new Stopwatch();
             w.Start();
             {
                 a();
             }
             w.Stop();
-            Console.WriteLine(w.ElapsedMilliseconds);
+            
+            Console.Write($" [3] Took: {w.ElapsedMilliseconds}");
             return w.ElapsedMilliseconds;
         }
     }
