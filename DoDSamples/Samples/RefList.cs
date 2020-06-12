@@ -6,7 +6,8 @@ using System.Text;
 
 namespace DoDSamples.Samples
 {
-    public class RefList<T>
+
+    public class RefList<T> : IEnumerable
     {
         private T[] array = null;
         private int index = 0;
@@ -26,7 +27,7 @@ namespace DoDSamples.Samples
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(T value)
         {
-            if(index >= array.Length)
+            if (index >= array.Length)
             {
                 Expand();
             }
@@ -62,6 +63,7 @@ namespace DoDSamples.Samples
         }
 
         public RefEnumerator GetEnumerator() => new RefEnumerator(array, capacity);
+        IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
 
         public struct RefEnumerator
         {
@@ -77,7 +79,7 @@ namespace DoDSamples.Samples
                 this.capacity = capacity;
             }
 
-            public readonly ref T Current
+            public ref T Current
             {
                 get
                 {
