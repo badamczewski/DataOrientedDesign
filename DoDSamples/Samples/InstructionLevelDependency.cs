@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 
 namespace DoDSamples
@@ -161,6 +163,71 @@ namespace DoDSamples
             min = MinBranchFree(m1, MinBranchFree(m2, MinBranchFree(m3, m4)));
         }
 
+        public static void TestTrueIndependenceAVX(int[] x)
+        {
+            var min = 0;
+            var m1 = 0;
+            var m2 = 0;
+            var m3 = 0;
+            var m4 = 0;
+
+            for (int i = 0; i < x.Length; i += 4)
+            {
+                m1 = AVXMin(m1, x[i]);
+                m2 = AVXMin(m2, x[i + 1]);
+                m3 = AVXMin(m3, x[i + 2]);
+                m4 = AVXMin(m4, x[i + 3]);
+            }
+
+            min = AVXMin(m1, AVXMin(m2, AVXMin(m3, m4)));
+        }
+
+        public static int TestTrueIndependenceAVXVec(int[] x)
+        {
+            return AVXVecMin(x);
+        }
+        
+        public static int TestTrueIndependenceAVXVecIndependant(int[] x)
+        {
+            return AVXVecMinIndependent(x);
+        }
+
+        public static void TestTrueDependenceBranchFree(int[] x)
+        {
+            int min = int.MaxValue, inc = 0;
+            for (int i = 0; i < x.Length; i++)
+            {
+                inc = IsMinBranchFree(min, x[i]);
+                var delta = min - x[i];
+                min = min - (delta * inc);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int IsMinBranchFree(int x, int y)
+        {
+            var v = x - y;
+            return (int)((1 ^ ((uint)v >> (31))));
+        }
+
+
+        public static void TestTrueIndependenceDelta(int[] x)
+        {
+            var max = int.MaxValue;
+            int[] m = new int[4] { max, max, max, max };
+            var inc = 0;
+            for (int i = 0; i < x.Length; i += 4)
+            {
+                for (int w = 0; w < m.Length; w++)
+                {
+                    inc = IsMinBranchFree(m[w], x[i + w]);
+                    var delta = m[w] - x[i + w];
+                    m[w] = m[w] - (delta * inc);
+                }
+            }
+            // todo: residuals + min(m[0],m[1],m[2],m[3])
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int MinBranchFree(int x, int y)
         {
@@ -168,17 +235,70 @@ namespace DoDSamples
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int AVXMin(int x, int y)
+        {
+            var v1 = Vector128.CreateScalarUnsafe(x);
+            var v2 = Vector128.CreateScalarUnsafe(y);
+            return Avx.Min(v1, v2).ToScalar();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int AVXVecMin(int[] x)
+        {
+            int len = x.Length;
+            var min = Vector128.Create(int.MaxValue);
+            fixed (int* pSource = x)
+            {
+                int i = 0;
+                int lastBlockIndex = len - (len % 4);
+
+                while (i < lastBlockIndex) {
+                    min = Avx.Min(min, Avx.LoadVector128(pSource + i));
+                    i += 4;
+                }
+                var minValue = min.ToScalar();
+                while (i < len) {
+                    minValue = MinBranchFree(minValue, pSource[i]);
+                    i += 1;
+                }
+                return minValue;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int AVXVecMinIndependent(int[] x)
+        {
+            int len = x.Length;
+            var min1 = Vector128.Create(int.MaxValue);
+            var min2 = Vector128.Create(int.MaxValue);
+
+            fixed (int* pSource = x)
+            {
+                int i = 0;
+                int lastBlockIndex = len - (len % 8);
+
+                while (i < lastBlockIndex)
+                {
+                    min1 = Avx.Min(min1, Avx.LoadVector128(pSource + i));
+                    min2 = Avx.Min(min1, Avx.LoadVector128(pSource + i + 4));
+
+                    i += 8;
+                }
+                var minValue = min1.ToScalar() + min2.ToScalar();
+                while (i < len)
+                {
+                    minValue = MinBranchFree(minValue, pSource[i]);
+                    i += 1;
+                }
+                return minValue;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int MinBranch(int x, int y)
         {
             return (x <= y) ? x : y;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint IsMinBranchFree(int x, int y)
-        {
-            var v = x - y;
-            return 1 - 
-                (1 ^ ((uint)v >> (31)));
-        }
     }
 }
+
