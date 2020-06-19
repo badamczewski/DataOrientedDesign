@@ -22,7 +22,7 @@ namespace DoDSamples
         //  e = e* 1000; //Scale the time
         //  Console.WriteLine((double) e / (double) steps);
         //
-        public void TestK(int steps, int[] array)
+        public static void TestK(int steps, int[] array)
         {
             int lengthMod = array.Length - 1;
 
