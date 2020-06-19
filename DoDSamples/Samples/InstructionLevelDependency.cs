@@ -280,7 +280,7 @@ namespace DoDSamples
                 while (i < lastBlockIndex)
                 {
                     min1 = Avx.Min(min1, Avx.LoadVector128(pSource + i));
-                    min2 = Avx.Min(min1, Avx.LoadVector128(pSource + i + 4));
+                    min2 = Avx.Min(min2, Avx.LoadVector128(pSource + i + 4));
 
                     i += 8;
                 }
